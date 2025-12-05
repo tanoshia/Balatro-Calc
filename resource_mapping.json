@@ -1,0 +1,114 @@
+{
+  "description": "Maps game resource files to sprite sheet definitions",
+  "resource_path": "resources/textures/1x/",
+  "fallback_path": "assets/",
+  
+  "sprite_sheets": {
+    "playing_cards": {
+      "resource_file": "8BitDeck_opt2.png",
+      "fallback_file": "13x4 Playing Cards (High Contrast).png",
+      "grid": {
+        "cols": 13,
+        "rows": 4
+      },
+      "description": "52 playing cards, 2-A by suit (Hearts, Clubs, Diamonds, Spades)",
+      "card_naming": {
+        "suits": ["H", "C", "D", "S"],
+        "ranks": ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"],
+        "order": "row_major",
+        "note": "Cards are ordered left-to-right (2-A), top-to-bottom (H,C,D,S)"
+      }
+    },
+    
+    "enhancers": {
+      "resource_file": "Enhancers.png",
+      "fallback_file": "7x5 Card Backs, Enhancers and Seals.png",
+      "grid": {
+        "cols": 7,
+        "rows": 5
+      },
+      "description": "Card backs, enhancements, and seals",
+      "cards": {
+        "0": "red_deck",
+        "1": "card_back_default",
+        "2": "gold_seal",
+        "5": "stone_enhancement",
+        "6": "gold_enhancement",
+        "8": "bonus_enhancement",
+        "9": "mult_enhancement",
+        "10": "wild_enhancement",
+        "11": "lucky_enhancement",
+        "12": "glass_enhancement",
+        "13": "steel_enhancement",
+        "32": "purple_seal",
+        "33": "red_seal",
+        "34": "blue_seal"
+      }
+    },
+    
+    "editions": {
+      "resource_file": "Editions.png",
+      "fallback_file": "5x1 Editions.png",
+      "grid": {
+        "cols": 5,
+        "rows": 1
+      },
+      "description": "Card editions (Base, Foil, Holographic, Polychrome, Disabled)",
+      "note": "Editions may be embedded in Enhancers.png or separate",
+      "cards": {
+        "0": "base_edition",
+        "1": "foil_edition",
+        "2": "holographic_edition",
+        "3": "polychrome_edition",
+        "4": "disabled_edition"
+      }
+    },
+    
+    "jokers": {
+      "resource_file": "Jokers.png",
+      "fallback_file": "10x16 Jokers and Consumables.png",
+      "grid": {
+        "cols": 10,
+        "rows": 16
+      },
+      "description": "150 Joker cards"
+    },
+    
+    "tarots": {
+      "resource_file": "Tarots.png",
+      "fallback_file": "10x6 Tarot, Planet and Spectral Cards.png",
+      "grid": {
+        "cols": 10,
+        "rows": 6
+      },
+      "description": "Tarot, Planet, and Spectral cards"
+    },
+    
+    "boosters": {
+      "resource_file": "boosters.png",
+      "fallback_file": "4x9 Booster Packs.png",
+      "grid": {
+        "cols": 4,
+        "rows": 9
+      },
+      "description": "Booster pack types"
+    },
+    
+    "vouchers": {
+      "resource_file": "Vouchers.png",
+      "fallback_file": null,
+      "grid": {
+        "cols": null,
+        "rows": null
+      },
+      "description": "Voucher cards (grid size TBD)"
+    }
+  },
+  
+  "notes": [
+    "Resource files are from the game's installation directory",
+    "Fallback files are in the assets/ folder as backup",
+    "Grid dimensions may need verification by inspecting actual files",
+    "Some files may have different layouts than fallback versions"
+  ]
+}
