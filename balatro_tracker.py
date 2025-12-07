@@ -74,11 +74,42 @@ class BalatroTracker:
         main_frame = tk.Frame(self.root, bg=self.bg_color, padx=10, pady=10)
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
-        # Title
-        title = tk.Label(main_frame, text="Click a card to add to sequence", 
+        # Title and filter row
+        title_frame = tk.Frame(main_frame, bg=self.bg_color)
+        title_frame.grid(row=0, column=0, pady=10)
+        
+        title = tk.Label(title_frame, text="Click a card to add to sequence", 
                         font=('Arial', 14, 'bold'),
                         bg=self.bg_color, fg='white')
-        title.grid(row=0, column=0, pady=10)
+        title.pack(side=tk.LEFT, padx=(0, 20))
+        
+        # Filter dropdown
+        filter_label = tk.Label(title_frame, text="Filters:", 
+                               font=('Arial', 11),
+                               bg=self.bg_color, fg='white')
+        filter_label.pack(side=tk.LEFT, padx=(0, 5))
+        
+        # Initialize filter variables
+        self.modifier_filter = tk.StringVar(value="All Modifiers")
+        self.card_contrast = tk.StringVar(value="Standard")
+        self.face_card_collabs = {
+            'spades': tk.StringVar(value="Default"),
+            'hearts': tk.StringVar(value="Default"),
+            'clubs': tk.StringVar(value="Default"),
+            'diamonds': tk.StringVar(value="Default")
+        }
+        
+        # Modifier filter dropdown
+        modifier_options = ["All Modifiers", "Scoring Only"]
+        modifier_menu = ttk.Combobox(title_frame, textvariable=self.modifier_filter,
+                                    values=modifier_options, state='readonly', width=15)
+        modifier_menu.pack(side=tk.LEFT, padx=5)
+        modifier_menu.bind('<<ComboboxSelected>>', self._on_modifier_filter_change)
+        
+        # Card designs button (opens popup menu)
+        card_design_btn = ttk.Button(title_frame, text="Card Designs...", 
+                                     command=self._open_card_design_menu)
+        card_design_btn.pack(side=tk.LEFT, padx=5)
         
         # Modifiers canvas (Enhancements and Seals)
         self.modifiers_canvas = tk.Canvas(main_frame, bg=self.bg_color,
@@ -164,6 +195,12 @@ class BalatroTracker:
                 print("Warning: Card Backs sheet not found for modifiers")
                 return
             
+            # Get current filter
+            filter_mode = self.modifier_filter.get() if hasattr(self, 'modifier_filter') else "All Modifiers"
+            
+            # Define non-scoring seal indices (Gold, Purple, Blue)
+            non_scoring_seals = [2, 32, 34]
+            
             # Load modifier configuration
             modifiers = []
             if self.card_order_config and 'modifiers' in self.card_order_config:
@@ -178,11 +215,14 @@ class BalatroTracker:
                         render_mode = render_modes[i] if i < len(render_modes) else 'overlay'
                         modifiers.append((idx, sprite, 'enhancement', render_mode))
                 
-                # Load seals
+                # Load seals (with filtering)
                 if 'seals' in mod_config:
                     indices = mod_config['seals']['indices']
                     render_modes = mod_config['seals'].get('render_modes', ['overlay'] * len(indices))
                     for i, idx in enumerate(indices):
+                        # Skip non-scoring seals if "Scoring Only" filter is active
+                        if filter_mode == "Scoring Only" and idx in non_scoring_seals:
+                            continue
                         sprite = self.sprite_loader.get_sprite(backs_sheet_name, idx, composite_back=False)
                         render_mode = render_modes[i] if i < len(render_modes) else 'overlay'
                         modifiers.append((idx, sprite, 'seal', render_mode))
@@ -425,14 +465,40 @@ class BalatroTracker:
         if not sheet_names:
             raise ValueError("No sprite sheets found in assets/ directory")
         
-        # Prioritize "Playing Cards (High Contrast)" sheet
-        sheet_name = None
-        for name in sheet_names:
-            if 'high contrast' in name.lower() and 'playing' in name.lower():
-                sheet_name = name
-                break
+        # Check contrast filter setting
+        use_high_contrast = hasattr(self, 'card_contrast') and self.card_contrast.get() == "High Contrast"
         
-        # Fallback: find any playing cards sheet (not backs, not booster, not joker, not tarot)
+        # Select appropriate sheet based on contrast setting
+        sheet_name = None
+        if use_high_contrast:
+            # Look for playing_cards_high_contrast first (from resource mapping)
+            if 'playing_cards_high_contrast' in sheet_names:
+                sheet_name = 'playing_cards_high_contrast'
+            else:
+                # Fallback: look for any high contrast sheet
+                for name in sheet_names:
+                    if 'high' in name.lower() and 'contrast' in name.lower() and 'playing' in name.lower():
+                        sheet_name = name
+                        break
+        else:
+            # Look for playing_cards (standard) first (from resource mapping)
+            if 'playing_cards' in sheet_names:
+                sheet_name = 'playing_cards'
+            else:
+                # Fallback: look for standard sheet (not high contrast)
+                for name in sheet_names:
+                    name_lower = name.lower()
+                    if ('playing' in name_lower or '8bitdeck' in name_lower) and \
+                       'high' not in name_lower and \
+                       'contrast' not in name_lower and \
+                       'back' not in name_lower and \
+                       'booster' not in name_lower and \
+                       'joker' not in name_lower and \
+                       'tarot' not in name_lower:
+                        sheet_name = name
+                        break
+        
+        # Fallback: find any playing cards sheet
         if not sheet_name:
             for name in sheet_names:
                 name_lower = name.lower()
@@ -449,6 +515,9 @@ class BalatroTracker:
         # Last resort: use first sheet
         if not sheet_name:
             sheet_name = sheet_names[0]
+        
+        print(f"Loading cards from: {sheet_name} (High Contrast: {use_high_contrast})")
+        print(f"Available sheets: {sheet_names}")
         
         sheet_info = self.sprite_loader.get_sheet_info(sheet_name)
         
@@ -472,6 +541,10 @@ class BalatroTracker:
             ordered_sprites = sprites
             cols = sheet_info['cols']
             rows = (len(sprites) + cols - 1) // cols
+        
+        # Replace face cards with collab sprites if selected
+        if use_custom_order:
+            ordered_sprites = self._apply_collab_face_cards(ordered_sprites, order_indices)
         
         # Set canvas size
         canvas_width = cols * (self.card_display_width + self.card_spacing) - self.card_spacing
@@ -501,20 +574,31 @@ class BalatroTracker:
             self.base_card_sprites[card_name] = sprite
             
             # Also get the card face without backing for background modifiers
-            # Extract the original sprite index to get the face
-            if '_' in card_name and card_name.split('_')[-1].isdigit():
-                sprite_idx = int(card_name.split('_')[-1])
-                sheet_name = '_'.join(card_name.split('_')[:-1])
-                
-                # Get card face without backing
-                if hasattr(self, 'sprite_loader') and self.sprite_loader:
-                    try:
+            # For collab face cards, extract from the base_sprite (which already has collab applied)
+            # For regular cards, get from sprite loader
+            if not hasattr(self, 'card_faces'):
+                self.card_faces = {}
+            
+            # Check if this is a collab-replaced face card
+            # The base_sprite already has the collab face composited with backing
+            # We need to extract just the face part
+            if hasattr(self, 'sprite_loader') and self.sprite_loader and self.sprite_loader.card_back:
+                try:
+                    # For collab cards, the sprite parameter is already the composited version
+                    # We need to extract the face by removing the backing
+                    # For now, just use the sprite without backing from the original sheet
+                    if '_' in card_name and card_name.split('_')[-1].isdigit():
+                        sprite_idx = int(card_name.split('_')[-1])
+                        sheet_name = '_'.join(card_name.split('_')[:-1])
                         card_face = self.sprite_loader.get_sprite(sheet_name, sprite_idx, composite_back=False)
-                        if not hasattr(self, 'card_faces'):
-                            self.card_faces = {}
+                        
+                        # Check if this card should use a collab face
+                        # This is a bit hacky but we need to re-apply collab logic here
+                        card_face = self._get_collab_face_if_applicable(card_name, card_face, row, col)
+                        
                         self.card_faces[card_name] = card_face
-                    except:
-                        pass
+                except:
+                    pass
             
             # Apply current modifiers and create display image
             display_sprite = self._apply_modifiers_to_card(sprite, card_name)
@@ -889,6 +973,298 @@ class BalatroTracker:
                         return names[idx_pos]
         
         return f"Modifier_{sprite_idx}"
+    
+    def _on_modifier_filter_change(self, event=None):
+        """Handle modifier filter change"""
+        filter_value = self.modifier_filter.get()
+        print(f"Modifier filter changed to: {filter_value}")
+        
+        # Clear existing modifiers
+        if hasattr(self, 'modifiers_canvas'):
+            self.modifiers_canvas.delete('all')
+        
+        # Clear modifier data structures
+        if hasattr(self, 'modifier_images'):
+            self.modifier_images.clear()
+        if hasattr(self, 'modifier_img_ids'):
+            self.modifier_img_ids.clear()
+        if hasattr(self, 'modifier_positions'):
+            self.modifier_positions.clear()
+        if hasattr(self, 'modifier_types'):
+            self.modifier_types.clear()
+        if hasattr(self, 'modifier_display_widths'):
+            self.modifier_display_widths.clear()
+        
+        # Reload modifiers with new filter
+        self.load_modifiers()
+    
+    def _open_card_design_menu(self):
+        """Open a popup window for card design options"""
+        popup = tk.Toplevel(self.root)
+        popup.title("Card Designs")
+        popup.configure(bg=self.bg_color)
+        popup.geometry("400x300")
+        
+        # Contrast selection
+        contrast_frame = tk.LabelFrame(popup, text="Card Contrast", 
+                                      bg=self.bg_color, fg='white', 
+                                      font=('Arial', 11, 'bold'))
+        contrast_frame.pack(padx=10, pady=10, fill=tk.X)
+        
+        tk.Radiobutton(contrast_frame, text="Standard", variable=self.card_contrast,
+                      value="Standard", bg=self.bg_color, fg='white',
+                      selectcolor=self.bg_color,
+                      command=self._on_contrast_change).pack(anchor=tk.W, padx=10, pady=2)
+        tk.Radiobutton(contrast_frame, text="High Contrast", variable=self.card_contrast,
+                      value="High Contrast", bg=self.bg_color, fg='white',
+                      selectcolor=self.bg_color,
+                      command=self._on_contrast_change).pack(anchor=tk.W, padx=10, pady=2)
+        
+        # Face card collaborations
+        collab_frame = tk.LabelFrame(popup, text="Face Card Collaborations", 
+                                    bg=self.bg_color, fg='white',
+                                    font=('Arial', 11, 'bold'))
+        collab_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+        
+        # Load collab options from resource_mapping.json
+        collab_options_by_suit = self._load_collab_options()
+        
+        suits_display = {'spades': '♠ Spades', 'hearts': '♥ Hearts', 
+                        'clubs': '♣ Clubs', 'diamonds': '♦ Diamonds'}
+        
+        for suit, display_name in suits_display.items():
+            suit_frame = tk.Frame(collab_frame, bg=self.bg_color)
+            suit_frame.pack(fill=tk.X, padx=10, pady=5)
+            
+            tk.Label(suit_frame, text=display_name, bg=self.bg_color, fg='white',
+                    font=('Arial', 10), width=12, anchor=tk.W).pack(side=tk.LEFT)
+            
+            # Get collab options for this suit
+            collab_options = collab_options_by_suit.get(suit, ["Default"])
+            
+            suit_menu = ttk.Combobox(suit_frame, textvariable=self.face_card_collabs[suit],
+                                    values=collab_options, state='readonly', width=25)
+            suit_menu.pack(side=tk.LEFT, padx=5)
+            suit_menu.bind('<<ComboboxSelected>>', lambda e, s=suit: self._on_collab_change(s))
+    
+    def _load_collab_options(self):
+        """Load collaboration options from resource_mapping.json"""
+        collab_options = {}
+        
+        try:
+            with open('resource_mapping.json', 'r') as f:
+                resource_mapping = json.load(f)
+            
+            if 'sprite_sheets' in resource_mapping and 'collab_face_cards' in resource_mapping['sprite_sheets']:
+                collab_data = resource_mapping['sprite_sheets']['collab_face_cards']
+                variants = collab_data.get('variants', {})
+                
+                for suit in ['spades', 'hearts', 'clubs', 'diamonds']:
+                    options = ["Default"]
+                    if suit in variants:
+                        for collab in variants[suit]:
+                            options.append(collab['display_name'])
+                    collab_options[suit] = options
+        except Exception as e:
+            print(f"Warning: Could not load collab options: {e}")
+            # Fallback to default
+            for suit in ['spades', 'hearts', 'clubs', 'diamonds']:
+                collab_options[suit] = ["Default"]
+        
+        return collab_options
+    
+    def _get_collab_face_if_applicable(self, card_name, default_face, row, col):
+        """Get collab face sprite if this card should use one"""
+        # Check if this is a face card position (K=col 1, Q=col 2, J=col 3)
+        if col not in [1, 2, 3]:
+            return default_face
+        
+        # Map column to face name
+        col_to_face = {1: 'K', 2: 'Q', 3: 'J'}
+        face_name = col_to_face[col]
+        
+        # Map row to suit
+        row_to_suit = {0: 'spades', 1: 'hearts', 2: 'clubs', 3: 'diamonds'}
+        if row not in row_to_suit:
+            return default_face
+        
+        suit = row_to_suit[row]
+        
+        # Check if a collab is selected for this suit
+        if not hasattr(self, 'face_card_collabs'):
+            return default_face
+        
+        collab_name = self.face_card_collabs[suit].get()
+        if collab_name == "Default":
+            return default_face
+        
+        # Load the collab face
+        try:
+            with open('resource_mapping.json', 'r') as f:
+                resource_mapping = json.load(f)
+            
+            collab_data = resource_mapping['sprite_sheets']['collab_face_cards']
+            resource_path = Path(collab_data['resource_path'])
+            variants = collab_data['variants']
+            
+            # Determine contrast mode
+            use_high_contrast = hasattr(self, 'card_contrast') and self.card_contrast.get() == "High Contrast"
+            contrast_key = 'high_contrast' if use_high_contrast else 'standard'
+            
+            # Find the collab data
+            collab_file = None
+            for collab in variants.get(suit, []):
+                if collab['display_name'] == collab_name:
+                    collab_file = collab[contrast_key]
+                    break
+            
+            if not collab_file:
+                return default_face
+            
+            # Load collab sprite sheet
+            collab_path = resource_path / collab_file
+            if not collab_path.exists():
+                return default_face
+            
+            # Load and extract the specific face card
+            collab_img = Image.open(collab_path).convert('RGBA')
+            card_width = collab_img.width // 3
+            
+            # Collab sprite sheet order: J, Q, K (indices 0, 1, 2)
+            face_to_collab_idx = {'J': 0, 'Q': 1, 'K': 2}
+            collab_idx = face_to_collab_idx[face_name]
+            
+            left = collab_idx * card_width
+            face_sprite = collab_img.crop((left, 0, left + card_width, collab_img.height))
+            
+            return face_sprite
+        
+        except Exception as e:
+            print(f"Warning: Could not load collab face for {suit} {face_name}: {e}")
+            return default_face
+    
+    def _apply_collab_face_cards(self, ordered_sprites, order_indices):
+        """Replace face cards (J, Q, K) with collab sprites if selected"""
+        # Check if any collabs are selected
+        has_collabs = False
+        for suit, var in self.face_card_collabs.items():
+            if var.get() != "Default":
+                has_collabs = True
+                break
+        
+        if not has_collabs:
+            return ordered_sprites
+        
+        # Load resource mapping to get collab file paths
+        try:
+            with open('resource_mapping.json', 'r') as f:
+                resource_mapping = json.load(f)
+            
+            collab_data = resource_mapping['sprite_sheets']['collab_face_cards']
+            resource_path = Path(collab_data['resource_path'])
+            variants = collab_data['variants']
+            
+            # Determine contrast mode
+            use_high_contrast = hasattr(self, 'card_contrast') and self.card_contrast.get() == "High Contrast"
+            contrast_key = 'high_contrast' if use_high_contrast else 'standard'
+            
+            # Map suits to their row indices (based on custom order: S, H, C, D)
+            suit_rows = {'spades': 0, 'hearts': 1, 'clubs': 2, 'diamonds': 3}
+            
+            # Face card columns in display order (A, K, Q, J, 10, 9, 8, 7, 6, 5, 4, 3, 2)
+            # K=1, Q=2, J=3 in 0-indexed 13-column layout
+            face_cols = {'K': 1, 'Q': 2, 'J': 3}
+            
+            # Process each suit
+            for suit, row_idx in suit_rows.items():
+                collab_name = self.face_card_collabs[suit].get()
+                if collab_name == "Default":
+                    continue
+                
+                # Find the collab data
+                collab_file = None
+                for collab in variants.get(suit, []):
+                    if collab['display_name'] == collab_name:
+                        collab_file = collab[contrast_key]
+                        break
+                
+                if not collab_file:
+                    continue
+                
+                # Load collab sprite sheet
+                collab_path = resource_path / collab_file
+                if not collab_path.exists():
+                    print(f"Warning: Collab file not found: {collab_path}")
+                    continue
+                
+                # Load and split the 3x1 collab sprite sheet
+                collab_img = Image.open(collab_path).convert('RGBA')
+                card_width = collab_img.width // 3
+                card_height = collab_img.height
+                
+                # Collab sprite sheet order: J, Q, K (indices 0, 1, 2)
+                # Display order: K, Q, J (columns 1, 2, 3)
+                collab_to_display = {'J': 0, 'Q': 1, 'K': 2}
+                
+                # Extract J, Q, K sprites and composite with card back
+                for face_name, col_idx in face_cols.items():
+                    # Get the correct index from collab sheet
+                    collab_idx = collab_to_display[face_name]
+                    left = collab_idx * card_width
+                    face_sprite = collab_img.crop((left, 0, left + card_width, card_height))
+                    
+                    # Composite with card back
+                    if self.sprite_loader and self.sprite_loader.card_back:
+                        back = self.sprite_loader.card_back.copy()
+                        if back.size != face_sprite.size:
+                            back = back.resize(face_sprite.size, Image.Resampling.LANCZOS)
+                        result = back.copy()
+                        result.paste(face_sprite, (0, 0), face_sprite)
+                        face_sprite = result
+                    
+                    # Replace in ordered_sprites
+                    display_idx = row_idx * 13 + col_idx
+                    if display_idx < len(ordered_sprites):
+                        ordered_sprites[display_idx] = face_sprite
+                        print(f"Replaced {suit} {face_name} with {collab_name}")
+        
+        except Exception as e:
+            print(f"Warning: Could not apply collab face cards: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        return ordered_sprites
+    
+    def _on_contrast_change(self):
+        """Handle contrast change - reload cards immediately"""
+        print(f"Contrast changed to: {self.card_contrast.get()}")
+        self._reload_cards()
+    
+    def _on_collab_change(self, suit):
+        """Handle collaboration change for a suit - reload cards immediately"""
+        print(f"Collab changed for {suit}: {self.face_card_collabs[suit].get()}")
+        self._reload_cards()
+    
+    def _reload_cards(self):
+        """Reload all playing cards with current design settings"""
+        # Clear existing cards
+        if hasattr(self, 'card_grid_canvas'):
+            self.card_grid_canvas.delete('all')
+        
+        # Clear card data structures
+        if hasattr(self, 'card_images'):
+            self.card_images.clear()
+        if hasattr(self, 'card_img_ids'):
+            self.card_img_ids.clear()
+        if hasattr(self, 'card_positions'):
+            self.card_positions.clear()
+        if hasattr(self, 'base_card_sprites'):
+            self.base_card_sprites.clear()
+        if hasattr(self, 'card_faces'):
+            self.card_faces.clear()
+        
+        # Reload cards with new settings
+        self.load_cards()
     
     def _show_message(self, title, message):
         """Show a message dialog"""

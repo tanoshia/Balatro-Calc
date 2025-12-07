@@ -5,18 +5,191 @@
   
   "sprite_sheets": {
     "playing_cards": {
+      "resource_file": "8BitDeck.png",
+      "fallback_file": "13x4 Playing Cards.png",
+      "grid": {
+        "cols": 13,
+        "rows": 4
+      },
+      "description": "52 playing cards standard contrast, 2-A by suit (Hearts, Clubs, Diamonds, Spades)",
+      "card_naming": {
+        "suits": ["H", "C", "D", "S"],
+        "ranks": ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"],
+        "order": "row_major",
+        "note": "Cards are ordered left-to-right (2-A), top-to-bottom (H,C,D,S)"
+      }
+    },
+    
+    "playing_cards_high_contrast": {
       "resource_file": "8BitDeck_opt2.png",
       "fallback_file": "13x4 Playing Cards (High Contrast).png",
       "grid": {
         "cols": 13,
         "rows": 4
       },
-      "description": "52 playing cards, 2-A by suit (Hearts, Clubs, Diamonds, Spades)",
-      "card_naming": {
-        "suits": ["H", "C", "D", "S"],
-        "ranks": ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"],
-        "order": "row_major",
-        "note": "Cards are ordered left-to-right (2-A), top-to-bottom (H,C,D,S)"
+      "description": "52 playing cards high contrast (opt2 version)"
+    },
+    
+    "collab_face_cards": {
+      "description": "Collaborative face card variants for J, Q, K. All files are 3x1 grids (J, Q, K left to right)",
+      "resource_path": "resources/textures/1x/collabs/",
+      "default_grid": {"cols": 3, "rows": 1},
+      "default_cards": ["J", "Q", "K"],
+      "variants": {
+        "spades": [
+          {
+            "id": "the_witcher",
+            "display_name": "The Witcher",
+            "standard": "collab_TW_1.png",
+            "high_contrast": "collab_TW_2.png"
+          },
+          {
+            "id": "cyberpunk_2077",
+            "display_name": "Cyberpunk 2077",
+            "standard": "collab_CYP_1.png",
+            "high_contrast": "collab_CYP_2.png"
+          },
+          {
+            "id": "shovel_knight",
+            "display_name": "Shovel Knight",
+            "standard": "collab_SK_1.png",
+            "high_contrast": "collab_SK_2.png"
+          },
+          {
+            "id": "dont_starve",
+            "display_name": "Don't Starve",
+            "standard": "collab_DS_1.png",
+            "high_contrast": "collab_DS_2.png"
+          },
+          {
+            "id": "assassins_creed",
+            "display_name": "Assassin's Creed",
+            "standard": "collab_AC_1.png",
+            "high_contrast": "collab_AC_2.png"
+          },
+          {
+            "id": "slay_the_princess",
+            "display_name": "Slay the Princess",
+            "standard": "collab_STP_1.png",
+            "high_contrast": "collab_STP_2.png"
+          }
+        ],
+        "hearts": [
+          {
+            "id": "among_us",
+            "display_name": "Among Us",
+            "standard": "collab_AU_1.png",
+            "high_contrast": "collab_AU_2.png"
+          },
+          {
+            "id": "the_binding_of_isaac",
+            "display_name": "The Binding of Isaac",
+            "standard": "collab_TBoI_1.png",
+            "high_contrast": "collab_TBoI_2.png"
+          },
+          {
+            "id": "cult_of_the_lamb",
+            "display_name": "Cult of the Lamb",
+            "standard": "collab_CL_1.png",
+            "high_contrast": "collab_CL_2.png"
+          },
+          {
+            "id": "divinity_original_sin_2",
+            "display_name": "Divinity: Original Sin 2",
+            "standard": "collab_D2_1.png",
+            "high_contrast": "collab_D2_2.png"
+          },
+          {
+            "id": "critical_role",
+            "display_name": "Critical Role",
+            "standard": "collab_CR_1.png",
+            "high_contrast": "collab_CR_2.png"
+          },
+          {
+            "id": "bugsnax",
+            "display_name": "Bugsnax",
+            "standard": "collab_BUG_1.png",
+            "high_contrast": "collab_BUG_2.png"
+          }
+        ],
+
+        "clubs": [
+          {
+            "id": "vampire_survivors",
+            "display_name": "Vampire Survivors",
+            "standard": "collab_VS_1.png",
+            "high_contrast": "collab_VS_2.png"
+          },
+          {
+            "id": "slay_the_spire",
+            "display_name": "Slay the Spire",
+            "standard": "collab_STS_1.png",
+            "high_contrast": "collab_STS_2.png"
+          },
+          {
+            "id": "potion_craft",
+            "display_name": "Potion Craft",
+            "standard": "collab_PC_1.png",
+            "high_contrast": "collab_PPC_2.png"
+          },
+          {
+            "id": "warframe",
+            "display_name": "Warframe",
+            "standard": "collab_WF_1.png",
+            "high_contrast": "collab_WF_2.png"
+          },
+          {
+            "id": "dead_by_daylight",
+            "display_name": "Dead by Daylight",
+            "standard": "collab_DBD_1.png",
+            "high_contrast": "collab_DBD_2.png"
+          },
+          {
+            "id": "fallout",
+            "display_name": "Fallout",
+            "standard": "collab_FO_1.png",
+            "high_contrast": "collab_FO_2.png"
+          }
+        ],
+
+        "diamonds": [
+          {
+            "id": "dave_the_diver",
+            "display_name": "Dave the Diver",
+            "standard": "collab_DTD_1.png",
+            "high_contrast": "collab_DTD_2.png"
+          },
+          {
+            "id": "stardew_valley",
+            "display_name": "Stardew Valley",
+            "standard": "collab_SV_1.png",
+            "high_contrast": "collab_SV_2.png"
+          },
+          {
+            "id": "enter_the_gungeon",
+            "display_name": "Enter the Gungeon",
+            "standard": "collab_EG_1.png",
+            "high_contrast": "collab_EG_2.png"
+          },
+          {
+            "id": "1000xresist",
+            "display_name": "1000xRESIST",
+            "standard": "collab_XR_1.png",
+            "high_contrast": "collab_XR_2.png"
+          },
+          {
+            "id": "civilization_vii",
+            "display_name": "Civilization VII",
+            "standard": "collab_C7_1.png",
+            "high_contrast": "collab_C7_2.png"
+          },
+          {
+            "id": "rust",
+            "display_name": "Rust",
+            "standard": "collab_R_1.png",
+            "high_contrast": "collab_R_2.png"
+          }
+        ]
       }
     },
     
@@ -32,14 +205,32 @@
         "0": "red_deck",
         "1": "card_back_default",
         "2": "gold_seal",
+        "3": "nebula_deck",
+        "4": "locked_card",
         "5": "stone_enhancement",
         "6": "gold_enhancement",
+        "7": "soul_top",
         "8": "bonus_enhancement",
         "9": "mult_enhancement",
         "10": "wild_enhancement",
         "11": "lucky_enhancement",
         "12": "glass_enhancement",
         "13": "steel_enhancement",
+        "14": "blue_deck",
+        "15": "yellow_deck",
+        "16": "green_deck",
+        "17": "black_deck",
+        "18": "plasma_deck",
+        "20": "ghost_deck",
+        "21": "magic_deck",
+        "22": "checkered_deck",
+        "23": "erratic_deck",
+        "24": "abandoned_deck",
+        "25": "painted_deck",
+        "26": "joker_shadow_card",
+        "27": "joker_unknown_card",
+        "30": "anaglyph_deck",
+        "31": "zodiac_deck",
         "32": "purple_seal",
         "33": "red_seal",
         "34": "blue_seal"
