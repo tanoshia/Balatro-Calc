@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Balatro Card Order Tracker
-A simple GUI app to track card order by clicking on card images.
+Nebulatro - Balatro Card Order Tracker
+A GUI app to track card order by clicking on card images with modifiers and custom designs.
 """
 
 import tkinter as tk
@@ -17,7 +17,10 @@ from sprite_loader import SpriteLoader
 class BalatroTracker:
     def __init__(self, root, use_sprite_loader=True):
         self.root = root
-        self.root.title("Balatro Card Tracker")
+        self.root.title("Nebulatro")
+        
+        # Set app icon
+        self._set_app_icon()
         
         # UI Configuration
         self.card_spacing = 2  # Spacing between cards (pixels)
@@ -70,6 +73,23 @@ class BalatroTracker:
         
         # Force recalculation of modifier positions after window is shown
         self.root.after(100, self._recalculate_modifier_positions)
+    
+    def _set_app_icon(self):
+        """Set application icon"""
+        try:
+            # Try .icns first, then .png
+            for icon_file in ["app_icon.icns", "app_icon.png"]:
+                icon_path = Path(icon_file)
+                if icon_path.exists():
+                    icon_img = Image.open(icon_path)
+                    if icon_img.size[0] > 256 or icon_img.size[1] > 256:
+                        icon_img.thumbnail((256, 256), Image.Resampling.LANCZOS)
+                    icon_photo = ImageTk.PhotoImage(icon_img)
+                    self.root.iconphoto(True, icon_photo)
+                    self.root._icon_photo = icon_photo  # Prevent garbage collection
+                    break
+        except Exception as e:
+            print(f"Warning: Could not set app icon: {e}")
     
     def setup_ui(self):
         """Create the UI layout"""

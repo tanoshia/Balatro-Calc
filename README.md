@@ -1,6 +1,6 @@
-# Balatro Card Order Tracker
+# Nebulatro
 
-A Python GUI application for tracking card order in Balatro by clicking on card images. Features modifier overlays, dynamic card spacing, and export functionality.
+A Balatro card order tracker with modifier overlays, custom card designs, and dynamic spacing. Track your card sequences by clicking cards with enhancements, editions, and seals applied.
 
 ## Setup
 
