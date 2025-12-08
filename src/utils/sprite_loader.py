@@ -13,7 +13,7 @@ from typing import Dict, List, Tuple, Optional
 
 
 class SpriteLoader:
-    def __init__(self, assets_dir: str = "assets", resource_mapping: str = "resource_mapping.json"):
+    def __init__(self, assets_dir: str = "assets", resource_mapping: str = "config/resource_mapping.json"):
         """Initialize sprite loader with assets directory and resource mapping"""
         self.assets_dir = Path(assets_dir)
         self.resource_mapping_path = Path(resource_mapping)

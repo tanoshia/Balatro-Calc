@@ -48,7 +48,7 @@ If you don't have access to game resources, the app will fall back to sprite she
 
 ```bash
 source venv/bin/activate
-python3 balatro_tracker.py
+python3 nebulatro.py
 ```
 
 ## Usage
@@ -93,15 +93,40 @@ Configures:
 ## Project Structure
 
 ```
-balatro_tracker.py          # Main application
-sprite_loader.py            # Sprite sheet loader
-card_order_config.json      # Card display configuration
-resource_mapping.json       # Game resource mappings
-requirements.txt            # Python dependencies
+nebulatro.py                # Launcher script
+src/
+  main.py                   # Main orchestrator
+  managers/                 # Business logic
+    card_manager.py
+    modifier_manager.py
+    design_manager.py
+  ui/                       # User interface
+    components.py
+    layout_manager.py
+  utils/                    # Utilities
+    sprite_loader.py
+config/                     # Configuration files
+  card_order_config.json
+  resource_mapping.json
 resources/                  # Game resources (not included - copy from game)
 assets/                     # Fallback sprite sheets
-SPRITE_SETUP.md            # Sprite sheet guide
+requirements.txt            # Python dependencies
 ```
+
+### Architecture
+
+The app uses a modular Python package structure with clear separation of concerns:
+
+- **src/main.py** - Main orchestrator that coordinates all components
+- **src/managers/** - Business logic managers
+  - **CardManager** - Card loading, display, and order tracking
+  - **ModifierManager** - Modifier selection and application
+  - **DesignManager** - Card design options (contrast, collabs)
+- **src/ui/** - User interface components
+  - **UIComponents** - UI layout, widgets, and filter controls
+  - **LayoutManager** - Dynamic window resizing and positioning
+- **src/utils/** - Utility modules
+  - **SpriteLoader** - Sprite sheet loading with resource mapping
 
 ## Requirements
 
