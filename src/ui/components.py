@@ -32,6 +32,9 @@ class UIComponents:
             'clubs': tk.StringVar(value="Default"),
             'diamonds': tk.StringVar(value="Default")
         }
+        
+        # Mode selection
+        self.app_mode = tk.StringVar(value="Manual Tracking")
     
     def set_app_icon(self):
         """Set application icon"""
@@ -51,7 +54,7 @@ class UIComponents:
     
     def setup_main_layout(self, card_display_width, card_display_height, 
                          on_modifier_filter_change, on_card_design_click,
-                         on_clear, on_undo, on_save):
+                         on_clear, on_undo, on_save, on_capture=None, on_mode_change=None):
         """Create the main UI layout"""
         # Configure root
         self.root.configure(bg=self.bg_color)
@@ -61,7 +64,7 @@ class UIComponents:
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Title and filter row
-        self._setup_title_and_filters(main_frame, on_modifier_filter_change, on_card_design_click)
+        self._setup_title_and_filters(main_frame, on_modifier_filter_change, on_card_design_click, on_mode_change)
         
         # Modifiers canvas
         self.modifiers_canvas = tk.Canvas(main_frame, bg=self.bg_color, highlightthickness=0)
@@ -79,22 +82,122 @@ class UIComponents:
         self._setup_order_list(main_frame)
         
         # Buttons
-        self._setup_buttons(main_frame, on_clear, on_undo, on_save)
+        self._setup_buttons(main_frame, on_clear, on_undo, on_save, on_capture)
         
         # Configure grid weights
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(0, weight=1)
     
-    def _setup_title_and_filters(self, parent, on_modifier_filter_change, on_card_design_click):
+    def update_title_for_mode(self, mode):
+        """Update title text based on current mode"""
+        if mode == "Manual Tracking":
+            self.title_label.configure(text="Click a card to add to sequence")
+        elif mode == "Data Labeling":
+            self.title_label.configure(text="Click the matching card to label the image")
+    
+    def update_order_label_for_mode(self, mode):
+        """Update order section label based on current mode"""
+        # Find the order label widget
+        parent = self.order_canvas.master.master  # Get main frame
+        order_labels = [w for w in parent.grid_slaves(row=4) if isinstance(w, tk.Label)]
+        if order_labels:
+            order_label = order_labels[0]
+            if mode == "Manual Tracking":
+                order_label.configure(text="Card Order:")
+            elif mode == "Data Labeling":
+                order_label.configure(text="Data to Label:")
+    
+    def setup_labeling_area(self, parent):
+        """Setup the data labeling area (replaces order list)"""
+        # Create labeling frame
+        self.labeling_frame = tk.Frame(parent, bg=self.bg_color)
+        
+        # Use grid layout to control positioning better
+        self.labeling_frame.columnconfigure(0, weight=1)
+        
+        # Control buttons (above image, below cards)
+        controls_frame = tk.Frame(self.labeling_frame, bg=self.bg_color)
+        controls_frame.grid(row=0, column=0, sticky='w', pady=10)
+        
+        # Navigation controls
+        nav_frame = tk.Frame(controls_frame, bg=self.bg_color)
+        nav_frame.grid(row=0, column=0, sticky='w', pady=(0, 10))
+        
+        self.prev_card_btn = tk.Button(nav_frame, text="← Previous", 
+                                      state=tk.DISABLED, width=10)
+        self.prev_card_btn.grid(row=0, column=0, padx=5)
+        
+        self.next_card_btn = tk.Button(nav_frame, text="Next →", 
+                                      state=tk.DISABLED, width=10)
+        self.next_card_btn.grid(row=0, column=1, padx=5)
+        
+        self.skip_card_btn = tk.Button(nav_frame, text="Skip", 
+                                      state=tk.DISABLED, width=10)
+        self.skip_card_btn.grid(row=0, column=2, padx=5)
+        
+        # Special labeling options
+        special_frame = tk.Frame(controls_frame, bg=self.bg_color)
+        special_frame.grid(row=1, column=0, sticky='w')
+        
+        special_label = tk.Label(special_frame, text="Special Labels:", 
+                                font=('Arial', 10, 'bold'),
+                                bg=self.bg_color, fg='white')
+        special_label.grid(row=0, column=0, sticky='w', pady=(0, 5))
+        
+        self.not_card_btn = tk.Button(special_frame, text="Not a Card", 
+                                     state=tk.DISABLED, width=12,
+                                     bg='#f44336', fg='white')
+        self.not_card_btn.grid(row=1, column=0, sticky='w', padx=5)
+        
+        # Card image display
+        image_frame = tk.Frame(self.labeling_frame, bg=self.bg_color, relief=tk.RAISED, bd=2)
+        image_frame.grid(row=1, column=0, sticky='w', pady=10)
+        
+        # Title for labeling area
+        label_title = tk.Label(image_frame, text="Card to Label", 
+                              font=('Arial', 12, 'bold'),
+                              bg=self.bg_color, fg='white')
+        label_title.pack(pady=(10, 5))
+        
+        # Image display (no fixed size to allow proper scaling)
+        self.label_image_display = tk.Label(image_frame, 
+                                           text="No card loaded\n\nClick 'Load Cards' to start labeling", 
+                                           font=('Arial', 10),
+                                           bg=self.bg_color, fg='#cccccc')
+        self.label_image_display.pack(padx=20, pady=10)
+        
+        # Card info
+        self.label_info = tk.Label(image_frame, text="", 
+                                  font=('Arial', 9),
+                                  bg=self.bg_color, fg='#aaaaaa')
+        self.label_info.pack(pady=(0, 10))
+        
+        return self.labeling_frame
+    
+    def _setup_title_and_filters(self, parent, on_modifier_filter_change, on_card_design_click, on_mode_change):
         """Setup title and filter controls"""
         title_frame = tk.Frame(parent, bg=self.bg_color)
         title_frame.grid(row=0, column=0, pady=10)
         
-        title = tk.Label(title_frame, text="Click a card to add to sequence", 
-                        font=('Arial', 14, 'bold'),
-                        bg=self.bg_color, fg='white')
-        title.pack(side=tk.LEFT, padx=(0, 20))
+        # Mode selector (leftmost)
+        mode_label = tk.Label(title_frame, text="Mode:", 
+                             font=('Arial', 11),
+                             bg=self.bg_color, fg='white')
+        mode_label.pack(side=tk.LEFT, padx=(0, 5))
+        
+        mode_dropdown = ttk.Combobox(title_frame, textvariable=self.app_mode,
+                                    values=["Manual Tracking", "Data Labeling"],
+                                    state="readonly", width=15)
+        mode_dropdown.pack(side=tk.LEFT, padx=(0, 20))
+        if on_mode_change:
+            mode_dropdown.bind('<<ComboboxSelected>>', on_mode_change)
+        
+        # Dynamic title based on mode
+        self.title_label = tk.Label(title_frame, text="Click a card to add to sequence", 
+                                   font=('Arial', 14, 'bold'),
+                                   bg=self.bg_color, fg='white')
+        self.title_label.pack(side=tk.LEFT, padx=(0, 20))
         
         filter_label = tk.Label(title_frame, text="Filters:", 
                                font=('Arial', 11),
@@ -136,11 +239,36 @@ class UIComponents:
         
         self.order_canvas.create_window((0, 0), window=self.order_frame, anchor='nw')
     
-    def _setup_buttons(self, parent, on_clear, on_undo, on_save):
+    def _setup_buttons(self, parent, on_clear, on_undo, on_save, on_capture=None):
         """Setup action buttons"""
         button_frame = ttk.Frame(parent)
         button_frame.grid(row=6, column=0, pady=10)
         
-        ttk.Button(button_frame, text="Clear Order", command=on_clear).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Undo Last", command=on_undo).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Save", command=on_save).pack(side=tk.LEFT, padx=5)
+        self.clear_btn = ttk.Button(button_frame, text="Clear Order", command=on_clear)
+        self.clear_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.undo_btn = ttk.Button(button_frame, text="Undo Last", command=on_undo)
+        self.undo_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.save_btn = ttk.Button(button_frame, text="Save", command=on_save)
+        self.save_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Add capture button if handler provided
+        if on_capture:
+            self.capture_btn = ttk.Button(button_frame, text="Capture Hand", command=on_capture)
+            self.capture_btn.pack(side=tk.LEFT, padx=5)
+    
+    def update_buttons_for_mode(self, mode):
+        """Update button text based on current mode"""
+        if mode == "Manual Tracking":
+            self.clear_btn.configure(text="Clear Order")
+            self.undo_btn.configure(text="Undo Last")
+            self.save_btn.configure(text="Save")
+            if hasattr(self, 'capture_btn'):
+                self.capture_btn.configure(text="Capture Hand")
+        elif mode == "Data Labeling":
+            self.clear_btn.configure(text="Clear Selection")
+            self.undo_btn.configure(text="Previous Card")
+            self.save_btn.configure(text="Save Label")
+            if hasattr(self, 'capture_btn'):
+                self.capture_btn.configure(text="Load Cards")

@@ -70,6 +70,7 @@ python3 nebulatro.py
 - **Export**: Save card order as CSV with modifiers (e.g., `AS+Mult+Foil,KS,QH+Red_Seal`)
 - **Dark Theme**: Matches macOS dark mode
 - **Undo/Clear**: Remove last card or reset entire sequence
+- **Card Recognition**: Capture and recognize cards from game screenshots (foundation for AI training)
 
 
 ## Configuration
