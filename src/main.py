@@ -238,7 +238,7 @@ class BalatroTracker:
     
     def _on_undo(self):
         """Handle undo last card"""
-        self.card_manager.undo_last_card()
+        self.card_manager.undo_last()
     
     def _on_save(self):
         """Handle save order"""
