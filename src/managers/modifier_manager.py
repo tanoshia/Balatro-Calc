@@ -43,6 +43,9 @@ class ModifierManager:
     def load_modifiers(self, filter_mode="All Modifiers"):
         """Load and display modifiers based on filter"""
         try:
+            # Clear existing modifiers first
+            self.clear_modifiers()
+            
             # Find the Card Backs sheet
             backs_sheet_name = self._find_backs_sheet()
             if not backs_sheet_name:
@@ -97,8 +100,34 @@ class ModifierManager:
             for display_idx, modifier_data in enumerate(modifiers):
                 self._create_modifier_button(display_idx, modifier_data)
             
+            # Recalculate positions after filtering to ensure proper spacing
+            if hasattr(self, 'modifier_positions') and self.modifier_positions:
+                self._recalculate_positions_after_filter()
+            
         except Exception as e:
             print(f"Warning: Could not load modifiers: {e}")
+    
+    def _recalculate_positions_after_filter(self):
+        """Recalculate modifier positions after filtering"""
+        try:
+            # Schedule a position recalculation after the UI updates
+            self.modifiers_canvas.after(50, self._delayed_position_update)
+                    
+        except Exception as e:
+            print(f"Warning: Could not recalculate modifier positions: {e}")
+    
+    def _delayed_position_update(self):
+        """Delayed position update after filter changes"""
+        try:
+            # Trigger a window resize event to recalculate positions
+            if hasattr(self, '_layout_manager_callback') and self._layout_manager_callback:
+                self._layout_manager_callback()
+        except Exception as e:
+            print(f"Warning: Could not update positions: {e}")
+    
+    def set_layout_callback(self, callback):
+        """Set callback for layout updates"""
+        self._layout_manager_callback = callback
     
     def _find_backs_sheet(self):
         """Find the card backs/enhancers sheet"""

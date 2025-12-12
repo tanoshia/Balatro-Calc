@@ -154,9 +154,13 @@ class CardManager:
             self.card_img_ids[card_name] = img_id
             self.card_positions[card_name] = {'row': row, 'col': col}
             
-            # Bind events
+            # Bind events - extract sprite_idx for card_class
+            sprite_idx = None
+            if '_' in card_name and card_name.split('_')[-1].isdigit():
+                sprite_idx = int(card_name.split('_')[-1])
+            
             self.card_grid_canvas.tag_bind(img_id, '<Button-1>', 
-                lambda e, name=card_name: self._on_card_click(name))
+                lambda e, name=card_name, cls=sprite_idx: self._on_card_click(name, cls))
             self.card_grid_canvas.tag_bind(img_id, '<Enter>', 
                 lambda e: self.card_grid_canvas.config(cursor='hand2'))
             self.card_grid_canvas.tag_bind(img_id, '<Leave>', 
