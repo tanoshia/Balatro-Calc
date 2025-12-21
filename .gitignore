@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# macOS App Bundle
+*.app
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Game Resources (large files from game installation)
+resources/
+
+# Generated card order files
+card_order_*.txt
+
+# Development documentation (for AI agents)
+knowledgebase.md
+
+# Extracted individual cards (testing only)
+cards/*.png
+cards/*.jpg
+cards/*.jpeg
+
+# Data labeling cards
+dataset/
+
+# Keep directory structure
+!assets/.gitkeep

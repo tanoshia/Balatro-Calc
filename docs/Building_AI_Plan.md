@@ -120,6 +120,20 @@ Other actions: `discard_cards`, `buy_shop_item`, `sell_joker`, `reroll_shop`, `e
 - **Hybrid detection pipeline** combining deep learning + template matching + traditional CV
 - **Card region refinement** for exact boundaries and quality assessment
 
+##### 3.1.info: Why YOLOv8 for Card Detection
+
+**YOLOv8 (You Only Look Once v8)** is ideal for Balatro card detection because:
+**Real-time Performance**: YOLOv8 can process images in <50ms, enabling real-time screenshot analysis during gameplay.
+**Multi-object Detection**: Detects all cards in a single pass rather than sliding window approaches. Perfect for Balatro hands with 1-8 cards.
+**Robust to Visual Effects**: Pre-trained on diverse datasets, YOLOv8 handles Balatro's visual effects (foil, holographic, polychrome) better than traditional CV methods.
+**Transfer Learning**: We'll fine-tune a pre-trained YOLOv8 model on Balatro-specific data rather than training from scratch, requiring only ~500-1000 annotated screenshots.
+**Bounding Box Precision**: YOLOv8 outputs precise bounding boxes with confidence scores, enabling quality filtering and fallback to other methods when confidence is low.
+**Implementation Strategy**:
+1. Use `ultralytics` Python package for easy YOLOv8 integration
+2. Create custom dataset with Nova-generated annotations
+3. Fine-tune on Balatro screenshots with data augmentation
+4. Deploy with confidence thresholding (>0.7 for auto-accept, <0.7 for template matching fallback)
+
 #### Phase 3.2: Nova-Assisted Card Detection Training
 - **Nova card annotation** to generate bounding box training data automatically
 - **Active learning pipeline** for continuous model improvement

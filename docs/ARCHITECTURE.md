@@ -170,6 +170,17 @@ src/
 - Applies realistic transformations and augmentations
 - Creates balanced datasets for all card classes
 
+### dataset/generate_variants.py
+**Augmented card variant generator** - Creates training data with realistic transforms
+- Generates 4x4 grids of 16 variants per card with rotation, perspective warping, shadows, and CRT effects
+- Loads sprite sheets from `config/resource_mapping.json` for zero-configuration processing
+- Creates meaningful filenames like `3H_glass.png` (rank+suit+enhancement)
+- Supports all card types: playing cards, collab face cards, jokers, tarots, enhancers
+- `--modifiers` flag: Generate all enhancement variants (base, glass, gold, etc.) - 8x more files
+- Without flag: Only generates base cards for smaller datasets
+- Usage: `python dataset/generate_variants.py --all --render-scale 4` (base only, ~1.3GB)
+- Usage: `python dataset/generate_variants.py --all --modifiers --render-scale 3` (all variants, ~6GB)
+
 ### src/ml/trainer.py
 **PyTorch training system** - Complete training pipeline
 - Automatic checkpointing and model saving

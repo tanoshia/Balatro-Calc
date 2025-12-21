@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Nebulatro - Balatro Card Order Tracker
-Main application orchestrator (cleaned up version)
+Main application orchestrator
 """
 
 import tkinter as tk
@@ -13,9 +13,6 @@ from PIL import Image
 from src.utils import SpriteLoader
 from src.ui import UIComponents, LayoutManager
 from src.managers import CardManager, ModifierManager, DesignManager
-from src.managers.labeling_manager import LabelingManager
-from src.managers.card_display_manager import CardDisplayManager
-from src.managers.mode_manager import ModeManager
 from src.vision import CardRecognizer, ScreenCapture
 
 
@@ -61,7 +58,7 @@ class BalatroTracker:
         self.ui = UIComponents(self.root, self.bg_color, self.canvas_bg)
         self.ui.set_app_icon()
         
-        # Setup main layout
+        # Setup main layout (simplified - no mode switching)
         self.ui.setup_main_layout(
             self.card_display_width, 
             self.card_display_height,
@@ -70,8 +67,7 @@ class BalatroTracker:
             self._on_clear,
             self._on_undo,
             self._on_save,
-            self._on_capture_hand,
-            self._on_mode_change
+            self._on_capture_hand
         )
     
     def _setup_managers(self):
@@ -115,27 +111,6 @@ class BalatroTracker:
             self.ui.face_card_collabs
         )
         self.design_manager.set_design_change_handler(self._on_design_change)
-        
-        # Card display manager
-        self.card_display_manager = CardDisplayManager(
-            self.ui, 
-            self.card_manager, 
-            self.modifier_manager, 
-            self.card_order_config
-        )
-        
-        # Labeling manager (needs card_display_manager)
-        self.labeling_manager = LabelingManager(self.ui, self.modifier_manager, self.card_display_manager)
-        
-        # Mode manager
-        self.mode_manager = ModeManager(
-            self.ui, 
-            self.card_manager, 
-            self.labeling_manager, 
-            self.card_display_manager,
-            self.card_order_config,
-            self.sprite_loader
-        )
     
     def _setup_layout(self):
         """Initialize layout manager"""
@@ -148,9 +123,9 @@ class BalatroTracker:
         )
     
     def _setup_event_handlers(self):
-        """Setup all event handlers and mode switching"""
-        # Initialize in manual tracking mode
-        self.mode_manager.switch_mode("Manual Tracking")
+        """Setup all event handlers"""
+        # Window resize handler will be bound in _initialize_display
+        pass
     
     def _initialize_display(self):
         """Initialize the display with cards and modifiers"""
@@ -170,22 +145,15 @@ class BalatroTracker:
     # Event Handlers
     def _on_card_click(self, card_name, card_class):
         """Handle card click events"""
-        current_mode = self.ui.app_mode.get()
-        
-        if current_mode == "Manual Tracking":
-            # Get the base sprite and apply modifiers
-            if card_name in self.card_manager.base_card_sprites:
-                base_sprite = self.card_manager.base_card_sprites[card_name]
-                card_face = self.card_manager.card_faces.get(card_name)
-                final_sprite = self.modifier_manager.apply_modifiers_to_card(base_sprite, card_face)
-                modifiers_applied = self.modifier_manager.get_selected_modifiers()
-                
-                # Add card to order with sprite and modifiers
-                self.card_manager.add_card_to_order(card_name, final_sprite, modifiers_applied)
-        elif current_mode == "Data Labeling":
-            # Set selected card for labeling
-            self.labeling_manager.selected_card_class = card_class
-            self.card_display_manager.update_matched_card_display(card_class, "selected")
+        # Get the base sprite and apply modifiers
+        if card_name in self.card_manager.base_card_sprites:
+            base_sprite = self.card_manager.base_card_sprites[card_name]
+            card_face = self.card_manager.card_faces.get(card_name)
+            final_sprite = self.modifier_manager.apply_modifiers_to_card(base_sprite, card_face)
+            modifiers_applied = self.modifier_manager.get_selected_modifiers()
+            
+            # Add card to order with sprite and modifiers
+            self.card_manager.add_card_to_order(card_name, final_sprite, modifiers_applied)
     
     def _on_modifier_change(self):
         """Handle modifier selection changes"""
@@ -221,8 +189,8 @@ class BalatroTracker:
                 self.modifier_manager.modifier_display_widths
             )
         
-        # Restore matched card display if needed
-        self.card_display_manager.restore_matched_card_display()
+        # Restore card display if needed (simplified)
+        self.card_manager.refresh_card_display(self.modifier_manager)
     
     def _on_modifier_filter_change(self, event=None):
         """Handle modifier filter changes"""
@@ -245,35 +213,24 @@ class BalatroTracker:
         self.card_manager.save_order()
     
     def _on_capture_hand(self):
-        """Handle capture hand / load cards based on mode"""
-        current_mode = self.ui.app_mode.get()
-        
-        if current_mode == "Manual Tracking":
-            # Capture hand functionality
-            try:
-                if not hasattr(self, 'screen_capture'):
-                    self.screen_capture = ScreenCapture()
-                if not hasattr(self, 'card_recognizer'):
-                    self.card_recognizer = CardRecognizer()
-                
-                # Capture and recognize cards
-                screenshot = self.screen_capture.capture_screen()
-                if screenshot:
-                    recognized_cards = self.card_recognizer.recognize_cards_in_image(screenshot)
-                    for card_name in recognized_cards:
-                        self.card_manager.add_card_to_order(card_name)
-                        
-            except Exception as e:
-                messagebox.showerror("Capture Error", f"Could not capture hand: {e}")
-        
-        elif current_mode == "Data Labeling":
-            # Load cards for labeling
-            self.labeling_manager.load_cards_for_labeling()
+        """Handle capture hand functionality"""
+        try:
+            if not hasattr(self, 'screen_capture'):
+                self.screen_capture = ScreenCapture()
+            if not hasattr(self, 'card_recognizer'):
+                self.card_recognizer = CardRecognizer()
+            
+            # Capture and recognize cards
+            screenshot = self.screen_capture.capture_screen()
+            if screenshot:
+                recognized_cards = self.card_recognizer.recognize_cards_in_image(screenshot)
+                for card_name in recognized_cards:
+                    self.card_manager.add_card_to_order(card_name)
+                    
+        except Exception as e:
+            messagebox.showerror("Capture Error", f"Could not capture hand: {e}")
     
-    def _on_mode_change(self, event=None):
-        """Handle mode switching"""
-        current_mode = self.ui.app_mode.get()
-        self.mode_manager.switch_mode(current_mode)
+    # Remove the mode change handler - no longer needed
     
 
     
